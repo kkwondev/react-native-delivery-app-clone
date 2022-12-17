@@ -1,4 +1,5 @@
-import {useCallback, useState} from 'react';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {useCallback, useRef, useState} from 'react';
 import {
   Alert,
   Pressable,
@@ -7,27 +8,36 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import {RootStackParamList} from '../../App';
 
-function SignIn({navigation}) {
+type SignInScreenProps = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
+
+function SignIn({navigation}: SignInScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const emailRef = useRef<TextInput | null>(null);
+  const passwordRef = useRef<TextInput | null>(null);
   const onSubmit = useCallback(() => {
-    Alert.alert('알림', '안녕');
+    if (!email || !email.trim()) {
+      return Alert.alert('알림', '이메일을 입력해주세요.');
+    }
+    if (!password || !password.trim()) {
+      return Alert.alert('알림', '비밀번호를 입력해주세요.');
+    }
+    Alert.alert('알림', '로그인 완료되었습니다.');
+  }, [email, password]);
+
+  const onChangeEmail = useCallback((text: string) => {
+    setEmail(text);
   }, []);
 
-  const onChangeEmail = useCallback(
-    (text: string) => {
-      setEmail(text);
-    },
-    [email],
-  );
+  const onChangePassword = useCallback((text: string) => {
+    setPassword(text);
+  }, []);
 
-  const onChangePassword = useCallback(
-    (text: string) => {
-      setPassword(text);
-    },
-    [password],
-  );
+  const onToggle = useCallback(() => {
+    navigation.navigate('SignUp');
+  }, [navigation]);
 
   const canGoNext = email && password;
   return (
@@ -39,6 +49,17 @@ function SignIn({navigation}) {
           placeholder="이메일을 입력해주세요."
           onChangeText={onChangeEmail}
           value={email}
+          importantForAutofill="yes"
+          autoComplete="email"
+          textContentType="emailAddress"
+          keyboardType="email-address"
+          returnKeyType="next"
+          onSubmitEditing={() => {
+            passwordRef.current?.focus();
+          }}
+          blurOnSubmit={false}
+          ref={emailRef}
+          clearButtonMode="while-editing"
         />
       </View>
       <View style={styles.inputWrapper}>
@@ -49,6 +70,13 @@ function SignIn({navigation}) {
           onChangeText={onChangePassword}
           value={password}
           secureTextEntry={true}
+          importantForAutofill="yes"
+          autoComplete="password"
+          textContentType="password"
+          ref={passwordRef}
+          onSubmitEditing={onSubmit}
+          clearButtonMode="while-editing"
+          keyboardType="phone-pad"
         />
       </View>
       <View style={styles.buttonZone}>
@@ -62,7 +90,7 @@ function SignIn({navigation}) {
           disabled={!canGoNext}>
           <Text style={styles.loginButtonText}>로그인</Text>
         </Pressable>
-        <Pressable onPress={() => navigation.navigate('SignUp')}>
+        <Pressable onPress={onToggle}>
           <Text>회원가입</Text>
         </Pressable>
       </View>
